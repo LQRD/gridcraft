@@ -78,21 +78,37 @@ fn moving_past_another_manual_break_preserves_scale_when_it_fits() {
     assert_eq!(sh.print.row_breaks, vec![24, 54]);
 }
 
-/// Moving a visible fitted break switches to a fixed scale so the manual destination takes effect.
+/// Fitted moves on either axis discard inactive breaks, preserve perpendicular pagination, and undo together.
 #[test]
 fn fitted_pages_switch_to_fixed_scale_and_explicit_sheet_is_respected() {
-    let mut s = session();
-    s.execute("pageLayout.pageSetup", json!({"fitWidth":2,"fitHeight":2,"rowBreaks":[]})).unwrap();
-    let lay = layout_sheet(&s.doc().unwrap().wb, 0, &PrintOptions::default(), None).unwrap();
-    let from = lay.row_bands[0].1 + 2;
-    assert!(from < 101);
-    s.execute("pageLayout.movePageBreak", json!({"sheet":0,"axis":"row","from":from,"to":from+2})).unwrap();
-    let after = layout_sheet(&s.doc().unwrap().wb, 0, &PrintOptions::default(), None).unwrap();
-    assert!(after.settings.fit_to.is_none());
-    assert_eq!(after.row_bands[0].1, from);
-    assert!(s.execute("pageLayout.movePageBreak", json!({"sheet":999,"axis":"row","from":12,"to":13})).is_err());
+    for rows in [true, false] {
+        let mut s = session();
+        s.execute("pageLayout.pageSetup", json!({"fitWidth":2,"fitHeight":2})).unwrap();
+        let before = serde_json::to_value(&s.doc().unwrap().wb.active().unwrap().print).unwrap();
+        let lay = layout_sheet(&s.doc().unwrap().wb, 0, &PrintOptions::default(), None).unwrap();
+        let bands = if rows { &lay.row_bands } else { &lay.col_bands };
+        assert!(bands.len() > 1);
+        let from = bands[0].1 + 2;
+        let to = from + 2;
+        s.execute("pageLayout.movePageBreak", json!({"sheet":0,"axis":if rows {"row"} else {"column"},"from":from,"to":to})).unwrap();
+        let wb = &s.doc().unwrap().wb;
+        let after = layout_sheet(wb, 0, &PrintOptions::default(), None).unwrap();
+        assert!(after.settings.fit_to.is_none());
+        let (moved, perpendicular) = if rows { (&after.row_bands, &after.col_bands) } else { (&after.col_bands, &after.row_bands) };
+        assert_eq!(moved[0].1, to - 2);
+        assert!(perpendicular.len() <= 2, "{perpendicular:?}");
+        let print = &wb.active().unwrap().print;
+        let (changed, other) = if rows { (&print.row_breaks, &print.col_breaks) } else { (&print.col_breaks, &print.row_breaks) };
+        assert_eq!(changed, &vec![to - 1]);
+        assert!(other.is_empty());
+        let bytes = gridcraft_xlsx::write_xlsx(wb).unwrap();
+        let (loaded, _) = gridcraft_xlsx::read_xlsx(&bytes).unwrap();
+        assert_eq!(serde_json::to_value(&loaded.active().unwrap().print).unwrap(), serde_json::to_value(print).unwrap());
+        s.execute("edit.undo", json!({})).unwrap();
+        assert_eq!(serde_json::to_value(&s.doc().unwrap().wb.active().unwrap().print).unwrap(), before);
+        assert!(s.execute("pageLayout.movePageBreak", json!({"sheet":999,"axis":"row","from":12,"to":13})).is_err());
+    }
 }
-
 /// Invalid, excessive and sub-minimum-scale destinations leave settings untouched; manual removal works.
 #[test]
 fn hostile_destinations_are_atomic_and_manual_breaks_can_be_removed() {

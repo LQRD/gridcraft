@@ -1598,9 +1598,10 @@ fn print_preview(s: &mut Session, p: &Json) -> Result<Json> {
     Ok(json!({"pages": n, "pageList": list}))
 }
 
-/// Moves a visible page boundary in one undoable edit, preserving unrelated breaks and settings.
+/// Moves a visible page boundary in one undoable edit, preserving unrelated active breaks and settings.
 /// An outward move lowers the scale enough to keep the preceding band on one page, including
 /// repeated titles and headings. Destinations requiring less than 10% are rejected atomically.
+/// Fitted layouts discard inactive stored breaks on both axes when switching to a fixed scale.
 fn move_page_break(s: &mut Session, p: &Json) -> Result<Json> {
     const CMD: &str = "pageLayout.movePageBreak";
     let si = target_sheet(s, p)?;
@@ -1634,7 +1635,14 @@ fn move_page_break(s: &mut Session, p: &Json) -> Result<Json> {
     if from == to {
         return Ok(json!(sh.print));
     }
-    let mut breaks = if rows { sh.print.row_breaks.clone() } else { sh.print.col_breaks.clone() };
+    // Fitted pagination ignores stored breaks; keep the result consistent with the visible preview.
+    let mut breaks = if !lay.manual_breaks {
+        vec![]
+    } else if rows {
+        sh.print.row_breaks.clone()
+    } else {
+        sh.print.col_breaks.clone()
+    };
     let manual = lay.manual_breaks && breaks.contains(&from);
     breaks.retain(|b| *b != from);
     let inside = to > lo && to <= hi;
@@ -1666,6 +1674,9 @@ fn move_page_break(s: &mut Session, p: &Json) -> Result<Json> {
         let scale =
             if lay.manual_breaks { u32::from(lay.settings.scale.clamp(10, 400)) } else { (lay.scale * 100.0).floor().clamp(10.0, 400.0) as u32 };
         params["scale"] = json!(scale.min(fit.min(400.0) as u32));
+        if !lay.manual_breaks {
+            params[if rows { "colBreaks" } else { "rowBreaks" }] = json!([]);
+        }
     }
     params[if rows { "rowBreaks" } else { "colBreaks" }] = json!(breaks.iter().map(|b| b + 1).collect::<Vec<_>>());
     page_setup(s, &params)

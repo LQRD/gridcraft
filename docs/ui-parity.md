@@ -10,7 +10,7 @@ Sources: `crates/ui-egui/src` (ribbon, grid, editor, formula bar, dialogs, panes
 `crates/engine/src/cmd` (shortcuts in command specs), the owner's black-box notes
 (`plan/excel/observed-ui.md`, local only) and user issues.
 
-Page Break Preview: drag the blue outer frame to resize the print area, or drag an internal line to move a manual or automatic break. Changes snap to cells and undo in one step; Escape cancels. An outward break move reduces print scale when needed (minimum 10%). The gesture supports zoom, scrolling and right-to-left sheets. The command is `pageLayout.movePageBreak`; other page settings and cell contents are preserved.
+Page Break Preview: drag the blue outer frame to resize the print area, or drag an internal line to move a manual or automatic break. Changes snap to cells and undo in one step; Escape cancels. An outward break move reduces print scale when needed (minimum 10%). The gesture supports zoom, scrolling and right-to-left sheets. The command is `pageLayout.movePageBreak`; cell contents are preserved. Moving a fitted break switches to a fixed scale and discards inactive stored breaks on both axes, so hidden breaks do not become active.
 
 ## Window and chrome
 
