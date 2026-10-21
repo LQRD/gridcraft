@@ -49,3 +49,16 @@ fn page_labels_follow_every_interface_language() {
         );
     }
 }
+
+/// A language command repaints cached page labels on the first frame without a font-order change.
+#[test]
+fn page_label_repaints_on_language_change_with_cached_pagination() {
+    let mut h = harness();
+    assert!(h.output().shapes.iter().any(|s| matches!(&s.shape, egui::Shape::Text(t) if t.galley.text() == "Page 1")));
+    h.state_mut().run("app.language.set", json!({"language":"es"})).unwrap();
+    h.run_steps(1);
+    assert!(
+        h.output().shapes.iter().any(|s| matches!(&s.shape, egui::Shape::Text(t) if t.galley.text() == "Página 1")),
+        "the translated label must be painted on the first frame after the language change"
+    );
+}
