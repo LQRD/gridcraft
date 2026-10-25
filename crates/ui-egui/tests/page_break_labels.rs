@@ -38,6 +38,14 @@ fn page_labels_follow_every_interface_language() {
         (Language::Cs, "Stránka 1"),
         (Language::Fr, "Page 1"),
         (Language::Sr, "Stranica 1"),
+        (Language::El, "Σελίδα 1"),
+        (Language::Tr, "Sayfa 1"),
+        (Language::Pl, "Strona 1"),
+        (Language::It, "Pagina 1"),
+        (Language::Uk, "Сторінка 1"),
+        (Language::Vi, "Trang 1"),
+        (Language::Nl, "Pagina 1"),
+        (Language::Ro, "Pagina 1"),
     ];
     assert_eq!(translations.len(), Language::ALL.len());
     for (language, label) in translations {
@@ -61,4 +69,21 @@ fn page_label_repaints_on_language_change_with_cached_pagination() {
         h.output().shapes.iter().any(|s| matches!(&s.shape, egui::Shape::Text(t) if t.galley.text() == "Página 1")),
         "the translated label must be painted on the first frame after the language change"
     );
+}
+
+/// Japanese changes the Han font order: repaint cached labels once egui activates the new fonts.
+#[test]
+fn page_label_repaints_after_japanese_font_change() {
+    let mut h = harness();
+    for (language, label) in [("ja", "1 ページ"), ("en", "Page 1")] {
+        h.state_mut().run("app.language.set", json!({"language":language})).unwrap();
+        h.run_steps(1);
+        assert!(!h.state().fonts_ready, "font definitions must activate before painting");
+        h.run_steps(1);
+        assert!(h.state().fonts_ready);
+        assert!(
+            h.output().shapes.iter().any(|s| matches!(&s.shape, egui::Shape::Text(t) if t.galley.text() == label)),
+            "{language}: cached page labels must repaint after the font transition"
+        );
+    }
 }
