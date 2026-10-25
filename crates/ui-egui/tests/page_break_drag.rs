@@ -138,3 +138,40 @@ fn ordinary_selection_can_end_on_a_page_boundary() {
     assert_eq!(settings(&h).print_area, RangeRef::parse("B2:L30"));
     assert_eq!(settings(&h).col_breaks, vec![6]);
 }
+
+/// Outer and internal page boundaries keep their resize cursor on hover and drag in either direction.
+#[test]
+fn page_boundaries_own_the_resize_cursor_until_cancelled() {
+    for rtl in [false, true] {
+        for (col, row, expected) in [
+            (12, 5, egui::CursorIcon::ResizeHorizontal),
+            (4, 30, egui::CursorIcon::ResizeVertical),
+            (6, 5, egui::CursorIcon::ResizeHorizontal),
+            (4, 11, egui::CursorIcon::ResizeVertical),
+        ] {
+            let mut h = fixture(rtl, 80);
+            let from = point(&h, col, row);
+            h.input_mut().events.push(Event::PointerMoved(from));
+            h.run_steps(2);
+            assert_eq!(h.output().platform_output.cursor_icon, expected, "hover at {col},{row}, rtl={rtl}");
+            h.input_mut().events.push(Event::PointerButton { pos: from, pressed: true, button: PointerButton::Primary, modifiers: Modifiers::NONE });
+            h.step();
+            assert!(h.state().grid.page_break_drag.is_some());
+            let to = from + vec2(10.0, 12.0);
+            h.input_mut().events.push(Event::PointerMoved(to));
+            h.step();
+            assert_eq!(h.output().platform_output.cursor_icon, expected, "drag at {col},{row}, rtl={rtl}");
+            h.input_mut().events.extend([
+                Event::Key { key: Key::Escape, physical_key: None, pressed: true, repeat: false, modifiers: Modifiers::NONE },
+                Event::PointerButton { pos: to, pressed: false, button: PointerButton::Primary, modifiers: Modifiers::NONE },
+            ]);
+            h.run_steps(2);
+            let sh = h.state().session.active().unwrap().wb.active().unwrap();
+            let geo = h.state().grid.geo.as_ref().unwrap();
+            let cell = geo.mirror_pos(geo.cell_rect(sh, gridcraft_engine::core::CellRef::new(3, 3)).center());
+            h.input_mut().events.push(Event::PointerMoved(cell));
+            h.run_steps(2);
+            assert_eq!(h.output().platform_output.cursor_icon, egui::CursorIcon::Cell, "ordinary cell after cancellation");
+        }
+    }
+}

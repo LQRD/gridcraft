@@ -813,18 +813,22 @@ pub fn show(app: &mut SheetApp, ui: &mut egui::Ui) {
     if app.grid.touch_pan && !resp.dragged() && !resp.drag_stopped() {
         app.grid.touch_pan = false;
     }
+    let mut page_break_cursor = false;
     if app.grid.touch_pan {
         // Skip the frames of a touch pan, its release included.
         if !resp.dragged() {
             app.grid.touch_pan = false;
         }
-    } else if !crate::page_breaks::interact(app, ui, &resp, &geo, sh) {
+    } else if crate::page_breaks::interact(app, ui, &resp, &geo, sh) {
+        page_break_cursor = true;
+        if app.grid.page_break_drag.is_none() {
+            keyboard(app, ui.ctx(), &resp, &geo, sh);
+        }
+    } else {
         crate::paper_view::interact(app, ui, &resp, &geo, sh, &wb);
         interact(app, ui, &resp, &geo, sh, &wb);
-    } else if app.grid.page_break_drag.is_none() {
-        keyboard(app, ui.ctx(), &resp, &geo, sh);
     }
-    update_cursor(app, ui, &resp, &geo, sh);
+    update_cursor(app, ui, &resp, &geo, sh, page_break_cursor);
     crate::text_box::show(app, ui, &geo, sh);
     if app.editor.as_ref().is_some_and(|e| !e.from_formula_bar) {
         in_cell_editor(app, ui, &geo, sh, &wb);
@@ -1993,7 +1997,8 @@ fn hidden_around(i: u32, size: impl Fn(u32) -> f32) -> (bool, bool) {
 const OBJECT_RESIZE_RADIUS: f32 = 10.0;
 
 /// Decide after interaction so drag start and release use the new state in the same frame.
-fn update_cursor(app: &mut SheetApp, ui: &egui::Ui, resp: &egui::Response, geo: &Geo, sh: &Sheet) {
+/// Hover bookkeeping remains active while a page boundary owns the cursor.
+fn update_cursor(app: &mut SheetApp, ui: &egui::Ui, resp: &egui::Response, geo: &Geo, sh: &Sheet, page_break_cursor: bool) {
     if app.text_box_editor.is_some() || app.grid.hf_edit.is_some() {
         return;
     }
@@ -2010,6 +2015,9 @@ fn update_cursor(app: &mut SheetApp, ui: &egui::Ui, resp: &egui::Response, geo: 
         && !matches!(app.grid.drag, Drag::Freeze { .. })
     {
         app.grid.hover_cell = in_cells.then(|| geo.cell_at(sh, p));
+    }
+    if page_break_cursor {
+        return;
     }
     // Draw tools own the cursor over cells, including while recording a stroke.
     if !app.session.draw_tool.is_empty() && in_cells {

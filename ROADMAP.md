@@ -291,3 +291,5 @@ Windows validation also keeps the CLI traversal parameter valid when Unix identi
 An exclusive-create failure now leaves an already occupied temporary name untouched; the cross-platform save regression checks both the destination and that existing entry.
 
 The generated parity checklist keeps LF endings on Windows checkouts so the byte-for-byte CI check remains portable.
+
+2026-10-25: Page Break Preview keeps its resize cursor on outer and internal boundaries, while hovering or dragging in either sheet direction; cancelling returns ordinary cells to the cell cursor.
