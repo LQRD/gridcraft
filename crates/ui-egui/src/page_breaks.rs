@@ -126,7 +126,7 @@ fn commit(app: &mut SheetApp, d: BoundaryDrag) {
 /// Captures blue-boundary gestures before cell selection, previews snapping, and scrolls near edges.
 /// Logical coordinates are mirrored for RTL sheets; stale drags and Escape never change the book.
 pub fn interact(app: &mut SheetApp, ui: &mut Ui, resp: &Response, geo: &Geo, sh: &Sheet) -> bool {
-    let key = app.session.active().map(|d| (d.uid, d.revision, d.wb.active_sheet));
+    let key = app.session.active().map(|d| (d.uid, d.revision, d.wb.active_sheet()));
     if sh.view != SheetViewMode::PageBreakPreview
         || app.dialog.is_some()
         || app.message.is_some()
