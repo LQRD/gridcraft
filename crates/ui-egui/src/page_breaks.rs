@@ -1,11 +1,11 @@
 //! Dragging print-area borders and page breaks in Page Break Preview.
 
-use egui::{Color32, CursorIcon, Key, Modifiers, Pos2, Response, Stroke, Ui, pos2, vec2};
+use egui::{CursorIcon, Key, Modifiers, Pos2, Response, Stroke, Ui, pos2, vec2};
 use gridcraft_engine::core::{MAX_COLS, MAX_ROWS, RangeRef};
 use gridcraft_engine::model::{Sheet, SheetViewMode};
 use serde_json::json;
 
-use crate::{SheetApp, grid::Geo};
+use crate::{SheetApp, grid::Geo, theme::Tokens};
 
 /// Pagination and full print area cached for a single document revision and active sheet.
 pub struct PageCache {
@@ -39,6 +39,8 @@ pub struct BoundaryDrag {
     edge: Edge,
     original: u32,
     target: u32,
+    pressed_at: Pos2,
+    moved: bool,
 }
 
 /// Finds a visible blue line within five points, giving the outer frame priority at corners.
@@ -144,12 +146,13 @@ pub fn interact(app: &mut SheetApp, ui: &mut Ui, resp: &Response, geo: &Geo, sh:
         app.grid.page_break_drag = None;
         return true;
     }
-    let Some(p) = pointer.interact_pos().or(pointer.hover_pos()).map(|p| geo.mirror_pos(p)) else {
+    let Some(pointer_pos) = pointer.interact_pos().or(pointer.hover_pos()) else {
         if !pointer.primary_down() {
             app.grid.page_break_drag = None;
         }
         return false;
     };
+    let p = geo.mirror_pos(pointer_pos);
     if app.grid.page_break_drag.is_none() {
         let Some(cache) = &app.grid.pages else { return false };
         let pages = &cache.pages;
@@ -165,13 +168,16 @@ pub fn interact(app: &mut SheetApp, ui: &mut Ui, resp: &Response, geo: &Geo, sh:
         if pointer.primary_pressed()
             && let Some(key) = key
         {
-            app.grid.page_break_drag = Some(BoundaryDrag { key, area, edge, original: line, target: line });
+            app.grid.page_break_drag = Some(BoundaryDrag { key, area, edge, original: line, target: line, pressed_at: pointer_pos, moved: false });
         } else {
             return !pointer.any_down() && !pointer.any_released();
         }
     }
     let Some(mut d) = app.grid.page_break_drag.take() else { return false };
-    d.target = snap(&d, geo, sh, p);
+    d.moved |= pointer_pos != d.pressed_at;
+    if d.moved {
+        d.target = snap(&d, geo, sh, p);
+    }
     ui.ctx().set_cursor_icon(if d.edge.horizontal() { CursorIcon::ResizeHorizontal } else { CursorIcon::ResizeVertical });
     let r = geo.range_rect(sh, d.area);
     let points = if d.edge.horizontal() {
@@ -181,7 +187,7 @@ pub fn interact(app: &mut SheetApp, ui: &mut Ui, resp: &Response, geo: &Geo, sh:
     };
     ui.painter()
         .with_clip_rect(geo.mirror_rect(geo.cells))
-        .line_segment(points.map(|p| geo.mirror_pos(p)), Stroke::new(3.0, Color32::from_rgb(46, 111, 216)));
+        .line_segment(points.map(|p| geo.mirror_pos(p)), Stroke::new(3.0, Tokens::get(ui.ctx()).print_area));
     if pointer.primary_released() {
         commit(app, d);
     } else if pointer.primary_down() {
@@ -208,7 +214,8 @@ pub fn interact(app: &mut SheetApp, ui: &mut Ui, resp: &Response, geo: &Geo, sh:
                 },
             )
         };
-        if delta != egui::Vec2::ZERO
+        if d.moved
+            && delta != egui::Vec2::ZERO
             && let Some(view) = app.view_mut()
         {
             view.scroll = (view.scroll + delta).max(egui::Vec2::ZERO);

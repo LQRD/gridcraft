@@ -175,3 +175,63 @@ fn page_boundaries_own_the_resize_cursor_until_cancelled() {
         }
     }
 }
+
+/// A click within the hit tolerance never snaps narrow cells, even when held or batched.
+#[test]
+fn stationary_boundary_clicks_do_not_snap_at_low_zoom() {
+    for rtl in [false, true] {
+        for (col, row, offset) in [(12, 5, vec2(-4.0, 0.0)), (4, 30, vec2(0.0, -1.5)), (6, 5, vec2(-4.0, 0.0)), (4, 11, vec2(0.0, -1.5))] {
+            for held_frames in [0, 4, usize::MAX] {
+                let mut h = fixture(rtl, 10);
+                let before = serde_json::to_value(settings(&h)).unwrap();
+                let revision = h.state().session.active().unwrap().revision;
+                let from = point(&h, col, row) + vec2(if rtl { -offset.x } else { offset.x }, offset.y);
+                let button = |pressed| Event::PointerButton { pos: from, pressed, button: PointerButton::Primary, modifiers: Modifiers::NONE };
+                h.input_mut().events.extend([Event::PointerMoved(from), button(true)]);
+                if held_frames != usize::MAX {
+                    h.step();
+                    h.run_steps(held_frames);
+                }
+                h.input_mut().events.push(button(false));
+                h.run_steps(3);
+                assert_eq!(serde_json::to_value(settings(&h)).unwrap(), before, "rtl={rtl}, boundary=({col},{row}), held={held_frames}");
+                assert_eq!(h.state().session.active().unwrap().revision, revision, "a click creates no edit or undo step");
+                assert!(h.state().grid.page_break_drag.is_none());
+            }
+        }
+    }
+}
+
+/// The visible frame and drag preview share the active light or dark theme's boundary colour.
+#[test]
+fn boundary_frames_and_preview_follow_the_active_theme() {
+    use gridcraft_ui_egui::theme::Tokens;
+    assert_ne!(Tokens::light().print_area, Tokens::dark().print_area);
+    for dark in [false, true] {
+        let mut h = fixture(false, 100);
+        h.state_mut().run("view.darkMode", json!({"on": dark})).unwrap();
+        h.run_steps(3);
+        let palette = Tokens::get(&h.ctx);
+        assert_eq!(palette.dark, dark);
+        assert!(
+            h.output()
+                .shapes
+                .iter()
+                .any(|s| matches!(&s.shape, egui::Shape::Rect(r) if r.stroke.width == 3.0 && r.stroke.color == palette.print_area)),
+            "the page frame uses the active theme"
+        );
+        let from = point(&h, 12, 5);
+        h.input_mut().events.extend([
+            Event::PointerMoved(from),
+            Event::PointerButton { pos: from, pressed: true, button: PointerButton::Primary, modifiers: Modifiers::NONE },
+        ]);
+        h.step();
+        assert!(
+            h.output()
+                .shapes
+                .iter()
+                .any(|s| matches!(&s.shape, egui::Shape::LineSegment { stroke, .. } if stroke.width == 3.0 && stroke.color == palette.print_area)),
+            "the drag preview uses the same theme colour"
+        );
+    }
+}

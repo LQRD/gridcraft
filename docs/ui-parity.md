@@ -12,7 +12,7 @@ Sources: `crates/ui-egui/src` (ribbon, grid, editor, formula bar, dialogs, panes
 `crates/engine/src/cmd` (shortcuts in command specs), the owner's black-box notes
 (`plan/excel/observed-ui.md`, local only) and user issues.
 
-Page Break Preview: drag the blue outer frame to resize the print area, or drag an internal line to move a manual or automatic break. Changes snap to cells and undo in one step; Escape cancels. An outward break move reduces print scale when needed (minimum 10%). The gesture supports zoom, scrolling and right-to-left sheets. The command is `pageLayout.movePageBreak`; cell contents are preserved. Moving a fitted break switches to a fixed scale and discards inactive stored breaks on both axes, so hidden breaks do not become active.
+Page Break Preview: drag the blue outer frame to resize the print area, or drag an internal line to move a manual or automatic break. Changes snap to cells and undo in one step; Escape cancels. A stationary click, including a held or same-frame click at low zoom, leaves the print settings and undo history unchanged. Frames and the drag preview share the active light/dark theme colour. An outward break move reduces print scale when needed (minimum 10%). The gesture supports zoom, scrolling and right-to-left sheets. The command is `pageLayout.movePageBreak`; cell contents are preserved. Moving a fitted break switches to a fixed scale and discards inactive stored breaks on both axes, so hidden breaks do not become active.
 
 ## Window and chrome
 
@@ -191,6 +191,7 @@ scrollbar bugs 2–4 · pixel/feel pass against observed Excel 7–12.
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-26 | trivial | A stationary boundary click never snaps narrow cells, including held and same-frame clicks; frame and drag preview use the active theme palette. |
 | 2026-10-26 | trivial | Integrate draggable page boundaries and resize-cursor priority with main f6b0cec6. |
 | 2026-10-25 | trivial | Page Break Preview keeps the resize cursor over outer/internal boundaries and during dragging in LTR/RTL; cell cursor resumes after cancellation. |
 | 2026-10-25 | trivial | Integrate Page Break Preview boundary dragging with current main, preserving newer behavior and progress history. |

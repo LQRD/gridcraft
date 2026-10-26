@@ -4111,7 +4111,7 @@ fn paint_pages(app: &mut SheetApp, p: &Painter, geo: &Geo, sh: &Sheet) {
             p.rect_filled(r, 0.0, grey);
         }
     }
-    let blue = Color32::from_rgb(0x2E, 0x6F, 0xD8);
+    let blue = Tokens::get(p.ctx()).print_area;
     for (r, n) in pages {
         let rr = geo.range_rect(sh, *r);
         if !rr.intersects(c) {

@@ -244,6 +244,7 @@ Ranked; estimates in Opus 5.5 agent-hours. Detail and the full beta-gate list in
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-26 | trivial | A stationary boundary click never snaps narrow cells, including held and same-frame clicks; frame and drag preview use the active theme palette. |
 | 2026-10-26 | trivial | Integrate draggable page boundaries and resize-cursor priority with main f6b0cec6. |
 | 2026-10-25 | trivial | Integrate Page Break Preview boundary dragging with current main, preserving newer behavior and progress history. |
 | 2026-10-21 | minor | Page Break Preview: draggable print-area frame and internal page breaks, cell snapping, cancellation and one-step undo; outward moves fit the preceding band by reducing print scale |
