@@ -2,7 +2,7 @@
 //! wording (sentence case, «Blocca riquadri», «Unisci e allinea al centro»); anything absent falls
 //! back to English.
 
-/// Returns Italian interface text for known keys; unknown keys use the English fallback.
+/// Returns the Italian translation for `text`, or `None` so callers fall back to English.
 pub(super) fn translate(text: &str) -> Option<&'static str> {
     Some(match text {
         "Page {page}" => "Pagina {page}",
@@ -207,6 +207,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Page Break\nPreview" => "Anteprima interruzioni\ndi pagina",
         "Page\nLayout" => "Layout\ndi pagina",
         "Formula Bar" => "Barra della formula",
+        "Name Box" => "Casella nome",
+        "Cell Editor" => "Editor di cella",
+        "Font Size" => "Dimensione carattere",
         "Gridlines" => "Griglia",
         "Headings" => "Intestazioni",
         "Zoom" => "Zoom",
@@ -304,6 +307,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Dark" => "Scuro",
         "Sheet Options|View" => "Visualizza",
         "Print" => "Stampa",
+        "Print What" => "Cosa stampare",
         // Page Layout view and the Header & Footer tab.
         "Click to add data" => "Fai clic per aggiungere dati",
         "Add header" => "Aggiungi intestazione",

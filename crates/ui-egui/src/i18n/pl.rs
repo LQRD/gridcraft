@@ -1,4 +1,4 @@
-/// Returns Polish interface text for known keys; unknown keys use the English fallback.
+/// Returns the Polish translation for `text`, or `None` so callers fall back to English.
 pub(super) fn translate(text: &str) -> Option<&'static str> {
     Some(match text {
         "Page {page}" => "Strona {page}",
@@ -203,6 +203,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Page Break\nPreview" => "Podgląd\npodziału stron",
         "Page\nLayout" => "Układ\nstrony",
         "Formula Bar" => "Pasek formuły",
+        "Name Box" => "Pole nazwy",
+        "Cell Editor" => "Edytor komórki",
+        "Font Size" => "Rozmiar czcionki",
         "Gridlines" => "Linie siatki",
         "Headings" => "Nagłówki",
         "Zoom" => "Powiększenie",
@@ -300,6 +303,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Dark" => "Ciemny",
         "Sheet Options|View" => "Wyświetl",
         "Print" => "Drukuj",
+        "Print What" => "Co drukować",
         "Click to add data" => "Kliknij, aby dodać dane",
         "Add header" => "Dodaj nagłówek",
         "Add footer" => "Dodaj stopkę",

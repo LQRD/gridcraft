@@ -1,6 +1,6 @@
 //! Czech translations for the interface strings in i18n.rs.
 
-/// Returns Czech interface text for known keys; unknown keys use the shared English fallback.
+/// Returns the Czech translation for `text`, or `None` so callers fall back to English.
 pub(super) fn translate(text: &str) -> Option<&'static str> {
     Some(match text {
         "Paste" => "Vložit",
@@ -188,6 +188,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Page Break\nPreview" => "Náhled\nkonců stránek",
         "Page\nLayout" => "Rozložení\nstránky",
         "Formula Bar" => "Řádek vzorců",
+        "Name Box" => "Pole názvu",
+        "Cell Editor" => "Editor buňky",
+        "Font Size" => "Velikost písma",
         "Gridlines" => "Mřížka",
         "Headings" => "Záhlaví",
         "Zoom" => "Lupa",
@@ -333,6 +336,10 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Save .xlsx workbooks automatically after every change" => "Automaticky ukládat sešity .xlsx po každé změně",
         "Workbook calculation" => "Výpočet sešitu",
         "Enable iterative calculation" => "Povolit iterativní výpočet",
+        "Maximum Iterations:" => "Maximální počet iterací:",
+        "Maximum Change:" => "Maximální změna:",
+        "Maximum Iterations must be a whole number from 1 to 32767." => "Maximální počet iterací musí být celé číslo od 1 do 32767.",
+        "Maximum Change must be a number of 0 or more." => "Maximální změna musí být číslo 0 nebo větší.",
         "Calculation settings are saved with the workbook." => "Nastavení výpočtů se ukládá se sešitem.",
         "100%" => "100 %",
         "Zoom to\nSelection" => "Přiblížit\nna výběr",
@@ -418,6 +425,7 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "More\nFunctions" => "Další\nfunkce",
         "Sheet Options|View" => "Zobrazit",
         "Print" => "Tisknout",
+        "Print What" => "Co tisknout",
 
         // Additional runtime labels and tooltips, grouped by source file.
         // formula_bar.rs (alphabetical keys).
