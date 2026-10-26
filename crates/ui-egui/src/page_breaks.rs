@@ -174,7 +174,8 @@ pub fn interact(app: &mut SheetApp, ui: &mut Ui, resp: &Response, geo: &Geo, sh:
         }
     }
     let Some(mut d) = app.grid.page_break_drag.take() else { return false };
-    d.moved |= pointer_pos != d.pressed_at;
+    let drag_threshold = ui.ctx().options(|o| o.input_options.max_click_dist);
+    d.moved |= pointer_pos.distance(d.pressed_at) > drag_threshold;
     if d.moved {
         d.target = snap(&d, geo, sh, p);
     }

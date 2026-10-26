@@ -202,6 +202,34 @@ fn stationary_boundary_clicks_do_not_snap_at_low_zoom() {
     }
 }
 
+/// Sub-threshold pointer jitter never changes print settings, including held and batched clicks.
+#[test]
+fn boundary_click_jitter_does_not_snap_at_low_zoom() {
+    for rtl in [false, true] {
+        for (col, row, offset) in [(12, 5, vec2(-4.0, 0.0)), (4, 30, vec2(0.0, -1.5)), (6, 5, vec2(-4.0, 0.0)), (4, 11, vec2(0.0, -1.5))] {
+            for held_frames in [0, 4, usize::MAX] {
+                let mut h = fixture(rtl, 10);
+                let before = serde_json::to_value(settings(&h)).unwrap();
+                let revision = h.state().session.active().unwrap().revision;
+                let from = point(&h, col, row) + vec2(if rtl { -offset.x } else { offset.x }, offset.y);
+                let to = from + vec2(0.25, 0.25);
+                let button = |pos, pressed| Event::PointerButton { pos, pressed, button: PointerButton::Primary, modifiers: Modifiers::NONE };
+                h.input_mut().events.extend([Event::PointerMoved(from), button(from, true)]);
+                if held_frames != usize::MAX {
+                    h.step();
+                    h.input_mut().events.push(Event::PointerMoved(to));
+                    h.run_steps(held_frames);
+                }
+                h.input_mut().events.extend([Event::PointerMoved(to), button(to, false)]);
+                h.run_steps(3);
+                assert_eq!(serde_json::to_value(settings(&h)).unwrap(), before, "rtl={rtl}, boundary=({col},{row}), held={held_frames}");
+                assert_eq!(h.state().session.active().unwrap().revision, revision, "a click creates no edit or undo step");
+                assert!(h.state().grid.page_break_drag.is_none());
+            }
+        }
+    }
+}
+
 /// The visible frame and drag preview share the active light or dark theme's boundary colour.
 #[test]
 fn boundary_frames_and_preview_follow_the_active_theme() {

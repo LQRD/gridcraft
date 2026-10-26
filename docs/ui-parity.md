@@ -273,3 +273,5 @@ Page Break Preview boundary dragging is integrated with current main, retaining 
 Page-break gestures retain their resize cursor without disabling cell-hover bookkeeping.
 
 Integrate draggable page boundaries and resize-cursor priority with main f6b0cec6.
+
+Pointer jitter within egui's configured click-distance threshold leaves print settings unchanged; snapping and edge scrolling begin only after a deliberate drag, including at low zoom and in RTL sheets.
