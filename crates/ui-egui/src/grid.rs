@@ -15,6 +15,11 @@ use crate::SheetApp;
 use crate::editor::EditState;
 use crate::theme::{self, Tokens};
 
+/// A painted pane: its row span, column span and screen rectangle.
+pub(crate) type PaneQuad = ((u32, u32), (u32, u32), Rect);
+/// Cached Show Details cells, keyed by (doc uid, revision, sheet, pivot).
+type DetailsCache = ((u64, u64, usize, usize), Option<std::collections::HashSet<(u32, u32)>>);
+
 mod cell_paint;
 mod cursor;
 mod editor;
@@ -37,9 +42,9 @@ pub use editor::validation_arrow;
 use editor::{editor_slack, editor_width, list_picker_height};
 pub use geo::Geo;
 pub use interact::{follow_link, freeze_handles, point_move};
-pub(crate) use quadrant::paint_quadrant;
-pub(crate) use selection::paint_selection;
+pub(crate) use quadrant::{QuadrantPaint, paint_quadrant};
 pub use selection::selection_fill;
+pub(crate) use selection::{SelectionPaintInput, paint_selection};
 pub(crate) use show::horizontal_scrollbar;
 pub use show::show;
 #[cfg(test)]
@@ -220,7 +225,7 @@ pub struct GridState {
     /// report's top-left and cached per (doc uid, revision, sheet, pivot): finding them computes
     /// the whole report. `None` when the report can't be computed or is out of date: every cell
     /// of it offers Show Details, and running it says why.
-    pub show_details_cells: Option<((u64, u64, usize, usize), Option<std::collections::HashSet<(u32, u32)>>)>,
+    pub show_details_cells: Option<DetailsCache>,
     pub header_menu: Option<(Pos2, bool)>,
     /// Page Layout view pagination, cached per (doc uid, revision, sheet, rows, columns).
     pub paper: Option<crate::paper_view::PaperCache>,
@@ -243,6 +248,8 @@ pub struct GridState {
     pub wheel_zoom: Option<WheelZoom>,
     /// A one-finger touch drag in progress: it pans the sheet instead of selecting.
     pub touch_pan: bool,
+    /// What the macro step editor shows on the grid (Check, debugging).
+    pub macro_overlay: Option<crate::macro_editor::MacroOverlay>,
 }
 
 /// Ctrl+wheel zoom for one (doc uid, sheet). egui eases a notch in over several frames and
