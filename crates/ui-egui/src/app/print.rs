@@ -47,7 +47,11 @@ impl SheetApp {
     }
 
     /// Submit a job using missing options from the open Print page; explicit control options win.
+    /// Null and empty-object parameters inherit the same selected print options.
     pub(super) fn submit_print(&mut self, mut params: Json) -> Result<Json, String> {
+        if params.is_null() {
+            params = json!({});
+        }
         if let Some(bs) = &self.backstage
             && bs.page == crate::backstage::Page::Print
             && let Some(map) = params.as_object_mut()

@@ -109,3 +109,39 @@ fn print_scaling_picker_updates_preview_and_native_job() {
     assert_eq!(serde_json::to_value(&h.state().session.doc().unwrap().wb).unwrap(), before);
     assert_eq!(h.state().session.doc().unwrap().revision, revision);
 }
+
+/// Direct null and empty-object submissions inherit the same selected scope and scaling.
+#[test]
+fn null_print_submission_inherits_selected_scaling_and_scope() {
+    let jobs = Rc::new(RefCell::new(Vec::new()));
+    let mut app = app(jobs.clone());
+    let before = serde_json::to_value(&app.session.doc().unwrap().wb).unwrap();
+    let revision = app.session.doc().unwrap().revision;
+    let dirty = app.session.doc().unwrap().is_dirty();
+    let ctx = egui::Context::default();
+    for all in [false, true] {
+        for mode in [PrintScaling::Sheet, PrintScaling::NoScaling, PrintScaling::Columns, PrintScaling::Rows, PrintScaling::PageSetup] {
+            let bs = app.backstage.as_mut().unwrap();
+            bs.print_all = all;
+            bs.scaling = mode;
+            let params = bs.print_params();
+            let preview = app.run("file.printPreview", params).unwrap();
+            let empty = app.run("ui.printSubmit", json!({})).unwrap();
+            assert_eq!(empty["pages"], preview["pages"]);
+            app.poll_printing(&ctx);
+            let count = jobs.borrow().len();
+            let null = app.run("ui.printSubmit", Value::Null).unwrap();
+            assert_eq!(null["pages"], empty["pages"], "null must retain scope all={all} and scaling {mode:?}");
+            let submitted = jobs.borrow();
+            assert_eq!(submitted.len(), count + 1);
+            let pdf = submitted.last().unwrap();
+            assert!(pdf.starts_with(b"%PDF"));
+            assert_eq!(null["bytes"].as_u64().unwrap(), pdf.len() as u64);
+            drop(submitted);
+            app.poll_printing(&ctx);
+        }
+    }
+    assert_eq!(serde_json::to_value(&app.session.doc().unwrap().wb).unwrap(), before);
+    assert_eq!(app.session.doc().unwrap().revision, revision);
+    assert_eq!(app.session.doc().unwrap().is_dirty(), dirty);
+}
