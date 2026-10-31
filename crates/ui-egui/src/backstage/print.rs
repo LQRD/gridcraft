@@ -2,16 +2,16 @@ use super::{
     Align2, Backstage, Icon, Json, Outcome, Rect, Sense, SheetApp, Stroke, StrokeKind, Tokens, Ui, dim, json, pos2, square_button, theme, vec2,
 };
 
-/// Builds the print scope and scaling parameters, caches `file.printPreview` per document revision/options, and draws page thumbnails with navigation plus the print settings and Print action.
+/// Builds the print scope and scaling parameters, caches `file.printPreview` per document revision, active sheet and options, and draws page thumbnails with navigation plus the print settings and Print action.
 pub(super) fn print(app: &mut SheetApp, ui: &mut Ui, bs: &mut Backstage, out: &mut Outcome) {
     let t = Tokens::get(ui.ctx());
     let lang = app.ui.language;
-    let Some((uid, revision)) = app.session.active().map(|d| (d.uid, d.revision)) else {
+    let Some((uid, revision, active_sheet)) = app.session.active().map(|d| (d.uid, d.revision, d.wb.active_sheet())) else {
         dim(ui, lang.tr("No workbook is open."));
         return;
     };
     let params = bs.print_params();
-    let key = (uid, revision, bs.print_all, bs.scaling);
+    let key = super::PrintPreviewKey { document: uid, revision, active_sheet, all_sheets: bs.print_all, scaling: bs.scaling };
     if bs.preview.as_ref().is_none_or(|(k, _)| *k != key) {
         let preview = app.session.run("file.printPreview", params.clone()).unwrap_or(Json::Null);
         bs.preview = Some((key, preview));

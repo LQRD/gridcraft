@@ -145,3 +145,33 @@ fn null_print_submission_inherits_selected_scaling_and_scope() {
     assert_eq!(app.session.doc().unwrap().revision, revision);
     assert_eq!(app.session.doc().unwrap().is_dirty(), dirty);
 }
+
+/// Switching sheets without editing invalidates cached pages and keeps preview and print aligned.
+#[test]
+fn print_preview_follows_sheet_switch_without_document_revision() {
+    let jobs = Rc::new(RefCell::new(Vec::new()));
+    let mut h = crate::common::harness_with(crate::common::builder().with_size(egui::vec2(1100.0, 800.0)), app(jobs.clone()), 4);
+    let uid = h.state().session.doc().unwrap().uid;
+    let revision = h.state().session.doc().unwrap().revision;
+    let dirty = h.state().session.doc().unwrap().is_dirty();
+    let tall = preview(&mut h);
+    assert!(tall["pages"].as_u64().unwrap() > 1);
+    h.state_mut().run("sheet.activate", json!({"sheet":"Other"})).unwrap();
+    assert_eq!(h.state().session.doc().unwrap().uid, uid);
+    assert_eq!(h.state().session.doc().unwrap().revision, revision);
+    assert!(h.state().backstage.is_some());
+    h.run_steps(4);
+    let other = preview(&mut h);
+    assert_eq!(other["pages"], 1);
+    assert_eq!(other["pageList"][0]["sheet"], "Other");
+    assert!(h.output().shapes.iter().any(|shape| matches!(&shape.shape,egui::Shape::Text(t) if t.galley.text()=="Other · A1:B2")));
+    assert_eq!(h.state_mut().run("ui.printSubmit", json!({})).unwrap()["pages"], 1);
+    assert_eq!(jobs.borrow().len(), 1);
+    assert!(jobs.borrow()[0].starts_with(b"%PDF"));
+    h.run_steps(3);
+    h.state_mut().run("sheet.activate", json!({"sheet":"Tall"})).unwrap();
+    h.run_steps(4);
+    assert_eq!(preview(&mut h)["pages"], tall["pages"]);
+    assert_eq!(h.state().session.doc().unwrap().revision, revision);
+    assert_eq!(h.state().session.doc().unwrap().is_dirty(), dirty);
+}

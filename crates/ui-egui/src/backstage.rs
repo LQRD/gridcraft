@@ -109,6 +109,16 @@ const PROPERTIES: [(&str, &str); 6] = [
     ("description", "Description"),
 ];
 
+/// Inputs that determine cached pagination, including a view-only active-sheet change.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct PrintPreviewKey {
+    document: u64,
+    revision: u64,
+    active_sheet: usize,
+    all_sheets: bool,
+    scaling: PrintScaling,
+}
+
 /// The open Backstage view.
 #[derive(Clone, Debug)]
 pub struct Backstage {
@@ -121,8 +131,8 @@ pub struct Backstage {
     pub scaling: PrintScaling,
     /// Print: the previewed page (0-based).
     preview_page: usize,
-    /// Print: the preview for (document, revision, whole workbook, scaling override).
-    preview: Option<((u64, u64, bool, PrintScaling), Json)>,
+    /// Print: the preview for (document, revision, active sheet, whole workbook, scaling override).
+    preview: Option<(PrintPreviewKey, Json)>,
     /// Save As: the chosen file type (an extension from [`SAVE_TYPES`]).
     pub save_format: &'static str,
     /// Home and Open: when the recent workbooks were last changed.
