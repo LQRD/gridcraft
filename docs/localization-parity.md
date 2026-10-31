@@ -1,6 +1,6 @@
 # Localization parity
 
-> **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-30 · **Change:** trivial (Page Break Preview labels for 19 languages integrated with current main; previously minor: missing translations are listed by `cargo xtask i18n-report` and never fail a check) · **Target:** Microsoft Excel (Microsoft 365), Excel for Mac 16.113.4
+> **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-31 · **Change:** trivial (Page Break Preview labels for 19 languages integrated with current main; previously minor: missing translations are listed by `cargo xtask i18n-report` and never fail a check) · **Target:** Microsoft Excel (Microsoft 365), Excel for Mac 16.113.4
 
 Per-language status against Excel, which ships its UI in dozens of languages (Windows language
 packs cover 100+), with localized function names, argument separators, number and date formats,
@@ -110,6 +110,7 @@ language (none so far) and of localized function names.
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-31 | trivial | Integrate the separate Page Break Preview label translations with main 981fad14; preserve all 19 catalogs and first-repaint/Japanese font-transition regressions. |
 | 2026-10-30 | trivial | Integrate Page Break Preview labels (#2129) with current main, preserving all 19 interface languages and font-transition regressions. |
 | 2026-10-25 | trivial | Integrate Page Break Preview labels for 19 languages with current main, preserving newer behavior and progress history. |
 | 2026-10-21 | minor | Page Break Preview page-number overlays use the selected interface language, including all 11 shipped languages; switches with unchanged Han font order update cached page previews immediately; Japanese transitions wait for font activation |
